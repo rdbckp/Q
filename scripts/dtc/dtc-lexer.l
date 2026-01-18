@@ -34,11 +34,29 @@ COMMENT		"/*"([^*]|\*+[^*/])*\*+"/"
 LINECOMMENT	"//".*\n
 
 %{
+#include "dtc-parser.tab.h"
+
+/* Fix multiple definition of yylloc with modern clang */
+extern YYLTYPE yylloc;
+#define YYLLOC_DEFAULT(Current, Rhs, N) \
+	do { \
+		if (N) { \
+			(Current).first_line = YYRHSLOC(Rhs, 1).first_line; \
+			(Current).first_column = YYRHSLOC(Rhs, 1).first_column; \
+			(Current).last_line = YYRHSLOC(Rhs, N).last_line; \
+			(Current).last_column = YYRHSLOC(Rhs, N).last_column; \
+		} else { \
+			(Current).first_line = (Current).last_line = YYRHSLOC(Rhs, 0).last_line; \
+			(Current).first_column = (Current).last_column = YYRHSLOC(Rhs, 0).last_column; \
+		} \
+	} while (0)
+%}
+
+%{
 #include "dtc.h"
 #include "srcpos.h"
 #include "dtc-parser.tab.h"
 
-extern YYLTYPE yylloc;
 extern bool treesource_error;
 
 /* CAUTION: this will stop working if we ever use yyless() or yyunput() */
